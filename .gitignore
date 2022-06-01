@@ -7,3 +7,4 @@
 package-lock.json
 .idea/
 /src/assets/css
+/src/assets/js/main.min.js
