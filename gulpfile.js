@@ -153,7 +153,7 @@ const server = (done) => {
         //     baseDir: 'dist'
         // },
         //Для правки текущей верстки
-        proxy: "https://navitel.ru/ru",
+        proxy: "https://example.com/",
         //hot load
         middleware: [
             webpackDevMiddleware(bundler, {
