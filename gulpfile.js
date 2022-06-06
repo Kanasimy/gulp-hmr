@@ -95,8 +95,8 @@ export const styles = () => {
     return gulp.src(paths.src.scss, { sourcemaps: true })
         .pipe(sass().on('error', sass.logError))
         .pipe(postcss(processor))
-        .pipe(rename('add.min.css'))
-        .pipe(gulp.dest(paths.src.css_dest,  { sourcemaps: '.' }))
+        .pipe(rename('main.min.css'))
+        .pipe(gulp.dest(paths.dist.styles,  { sourcemaps: '.' }))
         .pipe(browser.stream());
 }
 
@@ -118,7 +118,7 @@ export const mainJs = () => {
     return gulp.src(paths.src.main_js)
         .pipe(rename({basename: 'main', suffix: '.min', extname: '.js'}))
         .pipe(uglify())
-        .pipe(gulp.dest(paths.src.scripts_dest))
+        .pipe(gulp.dest(paths.dist.scripts))
         .pipe(browser.stream());
 }
 
@@ -131,8 +131,6 @@ const clean = () => {
 //Copy
 const copy = () => {
     return gulp.src([
-        paths.src.fonts,
-        //paths.src.images,
         paths.src.css,
        paths.src.main_js,
         paths.src.scripts,
@@ -148,26 +146,50 @@ const copy = () => {
 
 const server = (done) => {
     browser.init({
+        //Для тестирования нового функционала
+        server: {
+            baseDir: 'dist'
+        },
+        //hot load
+        middleware: [
+            webpackDevMiddleware(bundler, {
+                publicPath: webpackConfig.output.publicPath,
+            }),
+            webpackHotMiddleware(bundler)
+        ],
+        port: 3000,
+    });
+    done();
+}
+
+const serverDev = (done) => {
+    browser.init({
         //Для тестирования новой сборки
         // server: {
         //     baseDir: 'dist'
         // },
         //Для правки текущей верстки
-        proxy: "https://example.com/",
+        proxy: "http://example.com/",
         //hot load
         middleware: [
             webpackDevMiddleware(bundler, {
                 publicPath: webpackConfig.output.publicPath,
-                stats: { colors: true }
+                //stats: { colors: true }
             }),
-            webpackHotMiddleware(bundler)
+            webpackHotMiddleware(bundler, {
+                log: console.log,
+                noInfo: false,
+                overlay: false
+            })
         ],
+        port: 3000,
         // open: true,
         // notify: false,
         // logSnippet: true
     });
     done();
 }
+
 
 
 const reload = (done) => {
@@ -181,32 +203,33 @@ const reload = (done) => {
 const watcher = () => {
   gulp.watch(paths.src.scss, gulp.series(styles));
   gulp.watch(paths.src.html).on('change', gulp.series(copy));
-  ///gulp.watch(paths.src.scripts_dest).on('change');
+  gulp.watch(paths.src.main_js, gulp.series(mainJs));
 }
 
 
 export default gulp.series (
     clean,
-   // mainJs,
-    //
-     copy,
+    copy,
     gulp.parallel(
         styles,
+        mainJs,
+        vendorScripts,
     ),
     gulp.series (
         server,
         watcher
     )
 );
+
 //Задача с использованием gulp
-export const proxyRu = gulp.series (
+export const dev = gulp.series (
     clean,
     copy,
     gulp.parallel(
         styles,
     ),
     gulp.series (
-        server,
+        serverDev,
         watcher
     )
 );
